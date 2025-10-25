@@ -1,5 +1,5 @@
 import express from 'express';
-import Match from '../models/Match.js';
+import {Match} from '../models/Match.js';
 import { protect } from '../middleware/authMiddleware.js'; // Import the protection
 
 const router = express.Router();

@@ -16,9 +16,12 @@ export const verifyAdminCode = (req, res) => {
   if (!secretCode) {
     return res.status(400).json({ message: 'Please provide the admin secret code' });
   }
-
+console.log("Code from browser:", secretCode);
+  console.log("Code expected from .env:", process.env.ADMIN_SECRET_CODE);
   // 2. Compare the provided code with the one in your .env file
   if (secretCode === process.env.ADMIN_SECRET_CODE) {
+    console.log("Code from browser:", secretCode);
+  console.log("Code expected from .env:", process.env.ADMIN_SECRET_CODE);
     // 3. If they match, create a JWT (the "hand-stamp")
     const token = jwt.sign(
       { 

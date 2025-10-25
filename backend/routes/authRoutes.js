@@ -1,25 +1,13 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
+// 1. Import the *controller function* that has the logic
+import { verifyAdminCode } from '../controllers/authController.js'; 
 
 const router = express.Router();
 
-// Your "Secret Code" Login
-router.post('/verify-code', (req, res) => {
-  const { code } = req.body;
+// 2. Tell the router: When a POST request comes to '/verify-code', 
+//    run the 'verifyAdminCode' function from the controller.
+router.post('/verify-code', verifyAdminCode);
 
-  if (code === process.env.ADMIN_SECRET_CODE) {
-    // Code is correct! Generate a JWT.
-    const token = jwt.sign(
-      { isAdmin: true },
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' } // Token lasts for 8 hours
-    );
-    
-    res.json({ success: true, token });
-  } else {
-    // Code is incorrect
-    res.status(401).json({ success: false, message: 'Invalid access code' });
-  }
-});
+// --- DELETE THE EXTRA CODE YOU ADDED BELOW THIS LINE ---
 
 export default router;

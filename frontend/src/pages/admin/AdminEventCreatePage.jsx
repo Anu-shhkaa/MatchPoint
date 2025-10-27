@@ -73,128 +73,76 @@ const AdminEventCreatePage = () => {
       setPosterPreview(previewUrl);
     }
   };
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Validation
-  if (!selectedSystem) {
-    alert('Please select a pointing system');
-    return;
-  }
 
-  if (!startDate || !endDate) {
-    alert('Please select both start and end dates');
-    return;
-  }
-
-  if (new Date(startDate) > new Date(endDate)) {
-    alert('End date cannot be before start date');
-    return;
-  }
-
-  setSubmitting(true);
-
-  try {
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append('name', eventName);
-    formData.append('eventType', eventType);
-    formData.append('sports', JSON.stringify(selectedSports.map(s => s.value)));
-    formData.append('teams', JSON.stringify(selectedTeams.map(t => t.value)));
-    formData.append('pointingSystem', selectedSystem.value);
-    formData.append('hasJokerFeature', hasJoker);
-    formData.append('startDate', startDate);
-    formData.append('endDate', endDate);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
-    if (poster) {
-      formData.append('poster', poster);
+    // Validation
+    if (!selectedSystem) {
+      alert('Please select a pointing system');
+      return;
     }
 
-    // Debug: Log what we're sending
-    console.log('📤 Sending event data:');
-    console.log('Event Name:', eventName);
-    console.log('Event Type:', eventType);
-    console.log('Sports:', selectedSports.map(s => s.value));
-    console.log('Teams:', selectedTeams.map(t => t.value));
-    console.log('Pointing System:', selectedSystem.value);
-    console.log('Has Joker:', hasJoker);
-    console.log('Start Date:', startDate);
-    console.log('End Date:', endDate);
-    console.log('Poster:', poster ? 'Yes' : 'No');
+    if (!startDate || !endDate) {
+      alert('Please select both start and end dates');
+      return;
+    }
 
-    const res = await api.post('/events', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    alert('Event created successfully!');
-    navigate(`/admin/events/${res.data._id}`);
-    
-  } catch (err) {
-    console.error('❌ Failed to create event:', err);
-    console.error('📡 Error response data:', err.response?.data);
-    console.error('🚨 Error status:', err.response?.status);
-    console.error('🔍 Error details:', err.response);
-    
-    alert('Error: ' + (err.response?.data?.message || 'Failed to create event'));
-  } finally {
-    setSubmitting(false);
-  }
-};
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-    
-  //   // Validation
-  //   if (!selectedSystem) {
-  //     alert('Please select a pointing system');
-  //     return;
-  //   }
+    if (new Date(startDate) > new Date(endDate)) {
+      alert('End date cannot be before start date');
+      return;
+    }
 
-  //   if (!startDate || !endDate) {
-  //     alert('Please select both start and end dates');
-  //     return;
-  //   }
+    setSubmitting(true);
 
-  //   if (new Date(startDate) > new Date(endDate)) {
-  //     alert('End date cannot be before start date');
-  //     return;
-  //   }
-
-  //   setSubmitting(true);
-
-  //   try {
-  //     // Create FormData for file upload
-  //     const formData = new FormData();
-  //     formData.append('name', eventName);
-  //     formData.append('eventType', eventType);
-  //     formData.append('sports', JSON.stringify(selectedSports.map(s => s.value)));
-  //     formData.append('teams', JSON.stringify(selectedTeams.map(t => t.value)));
-  //     formData.append('pointingSystem', selectedSystem.value);
-  //     formData.append('hasJokerFeature', hasJoker);
-  //     formData.append('startDate', startDate);
-  //     formData.append('endDate', endDate);
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('name', eventName);
+      formData.append('eventType', eventType);
+      formData.append('sports', JSON.stringify(selectedSports.map(s => s.value)));
+      formData.append('teams', JSON.stringify(selectedTeams.map(t => t.value)));
+      formData.append('pointingSystem', selectedSystem.value);
+      formData.append('hasJokerFeature', hasJoker);
+      formData.append('startDate', startDate);
+      formData.append('endDate', endDate);
       
-  //     if (poster) {
-  //       formData.append('poster', poster);
-  //     }
+      if (poster) {
+        formData.append('poster', poster);
+      }
 
-  //     const res = await api.post('/events', formData, {
-  //       headers: {
-  //         'Content-Type': 'multipart/form-data',
-  //       },
-  //     });
+      // Debug: Log what we're sending
+      console.log('📤 Sending event data:');
+      console.log('Event Name:', eventName);
+      console.log('Event Type:', eventType);
+      console.log('Sports:', selectedSports.map(s => s.value));
+      console.log('Teams:', selectedTeams.map(t => t.value));
+      console.log('Pointing System:', selectedSystem.value);
+      console.log('Has Joker:', hasJoker);
+      console.log('Start Date:', startDate);
+      console.log('End Date:', endDate);
+      console.log('Poster:', poster ? 'Yes' : 'No');
+
+      const res = await api.post('/events', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
-  //     alert('Event created successfully!');
-  //     navigate(`/admin/events/${res.data._id}`);
+      alert('Event created successfully!');
+      navigate(`/admin/events/${res.data._id}`);
       
-  //   } catch (err) {
-  //     console.error('Failed to create event', err);
-  //     alert('Error: ' + (err.response?.data?.message || 'Failed to create event'));
-  //   } finally {
-  //     setSubmitting(false);
-  //   }
-  // };
+    } catch (err) {
+      console.error('❌ Failed to create event:', err);
+      console.error('📡 Error response data:', err.response?.data);
+      console.error('🚨 Error status:', err.response?.status);
+      console.error('🔍 Error details:', err.response);
+      
+      alert('Error: ' + (err.response?.data?.message || 'Failed to create event'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-64">
@@ -204,175 +152,329 @@ const handleSubmit = async (e) => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Create New Event</h1>
-        
-        {/* Event Basic Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Basic Info */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Name *</label>
-              <input 
-                type="text" 
-                placeholder="e.g., Indoor Sphurti 2025"
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="bg-gradient-to-br from-blue-900/40 to-slate-800/40 backdrop-blur-sm rounded-xl border border-blue-800/30 shadow-lg p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
+          <p className="text-blue-200/70">Set up a new sports event with teams, sports, and scoring systems</p>
+        </div>
 
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Type *</label>
-              <select 
-                value={eventType} 
-                onChange={(e) => setEventType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Sphurti">Sphurti (Multi-Sport)</option>
-                <option value="VPL">VPL (League)</option>
-                <option value="VCL">VCL (League)</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Event Basic Info */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Basic Info */}
+            <div className="space-y-6">
+              {/* Event Name */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <label className="block text-sm font-medium text-blue-200 mb-3">Event Name *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Indoor Sphurti 2025"
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  className="w-full px-4 py-3 border border-blue-700/30 rounded-xl bg-slate-800 text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
 
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Dates *</label>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
-                  <input
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+              {/* Event Type */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <label className="block text-sm font-medium text-blue-200 mb-3">Event Type *</label>
+                <select 
+                  value={eventType} 
+                  onChange={(e) => setEventType(e.target.value)}
+                  className="w-full px-4 py-3 border border-blue-700/30 rounded-xl bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="Sphurti" className="bg-slate-800 text-white">Sphurti (Multi-Sport)</option>
+                  <option value="VPL" className="bg-slate-800 text-white">VPL (League)</option>
+                  <option value="VCL" className="bg-slate-800 text-white">VCL (League)</option>
+                  <option value="Other" className="bg-slate-800 text-white">Other</option>
+                </select>
+              </div>
+
+              {/* Event Dates */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <label className="block text-sm font-medium text-blue-200 mb-3">Event Dates *</label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">Start Date</label>
+                    <input
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-4 py-3 border border-blue-700/30 rounded-xl bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">End Date</label>
+                    <input
+                      type="datetime-local"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full px-4 py-3 border border-blue-700/30 rounded-xl bg-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+              </div>
+            </div>
+
+            {/* Right Column - Poster & Settings */}
+            <div className="space-y-6">
+              {/* Poster Upload */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <label className="block text-sm font-medium text-blue-200 mb-3">Event Poster</label>
+                <div className="space-y-4">
+                  {posterPreview && (
+                    <div className="text-center">
+                      <img 
+                        src={posterPreview} 
+                        alt="Poster preview" 
+                        className="max-h-64 mx-auto rounded-lg shadow-lg border border-blue-600/30"
+                      />
+                      <p className="text-sm text-blue-300/70 mt-2">Preview</p>
+                    </div>
+                  )}
                   <input
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePosterChange}
+                    className="block w-full text-sm text-blue-300 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-colors cursor-pointer"
                   />
+                  <p className="text-xs text-blue-300/70">Recommended: 16:9 ratio, max 5MB</p>
+                </div>
+              </div>
+
+              {/* Pointing System */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <label className="block text-sm font-medium text-blue-200 mb-3">Select Pointing System *</label>
+                <Select
+                  options={allSystems}
+                  value={selectedSystem}
+                  onChange={setSelectedSystem}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  placeholder="Choose a pointing system..."
+                  required
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      backgroundColor: '#1e293b',
+                      borderColor: 'rgba(59, 130, 246, 0.3)',
+                      color: 'white',
+                      borderRadius: '12px',
+                      padding: '8px 4px',
+                      '&:hover': {
+                        borderColor: 'rgba(59, 130, 246, 0.5)'
+                      }
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: '#1e293b',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(59, 130, 246, 0.3)'
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#334155'
+                      }
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: 'white'
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: 'rgba(147, 197, 253, 0.5)'
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: 'white'
+                    })
+                  }}
+                />
+              </div>
+
+              {/* Joker Feature */}
+              <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    id="joker"
+                    checked={hasJoker}
+                    onChange={(e) => setHasJoker(e.target.checked)}
+                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-blue-700/30 bg-slate-800 mt-1"
+                  />
+                  <div>
+                    <label htmlFor="joker" className="block text-sm font-medium text-blue-200">
+                      Enable Joker Feature for this event
+                    </label>
+                    <p className="text-xs text-blue-300/70 mt-1">
+                      Allows teams to play a joker match for double points
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Poster & Settings */}
-          <div className="space-y-6">
-            {/* Poster Upload */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Event Poster</label>
-              <div className="space-y-4">
-                {posterPreview && (
-                  <div className="text-center">
-                    <img 
-                      src={posterPreview} 
-                      alt="Poster preview" 
-                      className="max-h-64 mx-auto rounded-lg shadow-md"
-                    />
-                    <p className="text-sm text-gray-500 mt-2">Preview</p>
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePosterChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                <p className="text-xs text-gray-500">Recommended: 16:9 ratio, max 5MB</p>
-              </div>
-            </div>
-
-            {/* Pointing System */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Pointing System *</label>
+          {/* Sports and Teams Selection */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Sports Selection */}
+            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+              <label className="block text-sm font-medium text-blue-200 mb-3">Select Participating Sports</label>
               <Select
-                options={allSystems}
-                value={selectedSystem}
-                onChange={setSelectedSystem}
+                isMulti
+                options={allSports}
+                value={selectedSports}
+                onChange={setSelectedSports}
                 className="react-select-container"
                 classNamePrefix="react-select"
-                placeholder="Choose a pointing system..."
-                required
+                placeholder="Select sports..."
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '4px',
+                    '&:hover': {
+                      borderColor: 'rgba(59, 130, 246, 0.5)'
+                    }
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#334155'
+                    }
+                  }),
+                  multiValue: (base) => ({
+                    ...base,
+                    backgroundColor: '#334155'
+                  }),
+                  multiValueLabel: (base) => ({
+                    ...base,
+                    color: 'white'
+                  }),
+                  multiValueRemove: (base) => ({
+                    ...base,
+                    color: '#93c5fd',
+                    '&:hover': {
+                      backgroundColor: '#dc2626',
+                      color: 'white'
+                    }
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: 'rgba(147, 197, 253, 0.5)'
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    color: 'white'
+                  })
+                }}
               />
             </div>
 
-            {/* Joker Feature */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="joker"
-                  checked={hasJoker}
-                  onChange={(e) => setHasJoker(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                />
-                <label htmlFor="joker" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Enable Joker Feature for this event
-                </label>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Allows teams to play a joker match for double points
-              </p>
+            {/* Teams Selection */}
+            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-blue-700/30">
+              <label className="block text-sm font-medium text-blue-200 mb-3">Select Participating Teams</label>
+              <Select
+                isMulti
+                options={allTeams}
+                value={selectedTeams}
+                onChange={setSelectedTeams}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                placeholder="Select teams..."
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'white',
+                    borderRadius: '12px',
+                    padding: '4px',
+                    '&:hover': {
+                      borderColor: 'rgba(59, 130, 246, 0.5)'
+                    }
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#334155'
+                    }
+                  }),
+                  multiValue: (base) => ({
+                    ...base,
+                    backgroundColor: '#334155'
+                  }),
+                  multiValueLabel: (base) => ({
+                    ...base,
+                    color: 'white'
+                  }),
+                  multiValueRemove: (base) => ({
+                    ...base,
+                    color: '#93c5fd',
+                    '&:hover': {
+                      backgroundColor: '#dc2626',
+                      color: 'white'
+                    }
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: 'rgba(147, 197, 253, 0.5)'
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    color: 'white'
+                  })
+                }}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Sports and Teams Selection */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Participating Sports</label>
-            <Select
-              isMulti
-              options={allSports}
-              value={selectedSports}
-              onChange={setSelectedSports}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              placeholder="Select sports..."
-            />
+          {/* Submit Button */}
+          <div className="flex justify-end pt-6">
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-12 py-4 text-lg rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center gap-3 shadow-lg"
+            >
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Creating Event...
+                </>
+              ) : (
+                'Create Event'
+              )}
+            </button>
           </div>
-
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Participating Teams</label>
-            <Select
-              isMulti
-              options={allTeams}
-              value={selectedTeams}
-              onChange={setSelectedTeams}
-              className="react-select-container"
-              classNamePrefix="react-select"
-              placeholder="Select teams..."
-            />
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end pt-6">
-          <button 
-            type="submit" 
-            disabled={submitting}
-            className="bg-blue-600 text-white px-8 py-3 text-lg rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Creating Event...
-              </>
-            ) : (
-              'Create Event'
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

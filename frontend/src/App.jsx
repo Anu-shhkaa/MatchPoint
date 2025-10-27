@@ -75,7 +75,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:eventId" element={<EventDetailPage />} />
-        <Route path="/live" element={<LivePage />} />
+        <Route path="/matches/live" element={<LivePage />} />
         <Route path="/more" element={<MorePage />} />
         <Route path="/admin/match/:matchId/control" element={<ControlLiveMatchPage />} />
         <Route path="/admin/matches" element={<AdminMatchPage />} />

@@ -1,5 +1,5 @@
+// routes/eventRoutes.js
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
 import {
   createEvent,
   getAllEvents,
@@ -9,8 +9,9 @@ import {
 
 const router = express.Router();
 
+// REMOVED: protect middleware
 router.route('/')
-  .post(protect, upload.single('poster'), createEvent) // Add file upload middleware
+  .post(upload.single('poster'), createEvent) // No auth required
   .get(getAllEvents);
 
 router.route('/:id')

@@ -9,12 +9,11 @@ const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    // Use direct Tailwind colors with dark: prefix
-    // Example: Using a medium blue for light mode, slightly darker blue for dark mode
-    <nav className="bg-blue-600 dark:bg-blue-700 shadow-md sticky top-0 z-40 transition-colors duration-300">
+    // Updated color scheme to match admin dashboard
+    <nav className="bg-gray-800 dark:bg-gray-900 shadow-lg sticky top-0 z-40 transition-colors duration-300 border-b border-gray-700 dark:border-gray-600">
       <div className="container mx-auto px-4 max-w-7xl h-16 flex justify-between items-center">
         {/* Brand */}
-        <Link to="/" className="text-white text-2xl font-bold tracking-wide">
+        <Link to="/" className="text-white text-2xl font-bold tracking-wide hover:text-gray-200 transition-colors duration-200">
           MatchPoint
         </Link>
 
@@ -22,17 +21,16 @@ const Navbar = () => {
         <button
           onClick={toggleTheme}
           aria-label="Toggle Theme"
-          // Use direct Tailwind colors for the button background and hover
-          // Example: Using a lighter blue for light mode, slightly darker for dark
-          className="flex items-center gap-2 px-3 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-700 dark:hover:bg-blue-800 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-600 dark:focus:ring-offset-blue-700 focus:ring-white"
+          // Updated button colors to match admin theme
+          className="flex items-center gap-2 px-4 py-2 bg-gray-700 dark:bg-gray-800 text-white rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 dark:focus:ring-offset-gray-900 focus:ring-blue-400 border border-gray-600 dark:border-gray-700"
         >
           {theme === 'light' ? (
             <MoonIcon className="h-5 w-5" /> // Moon icon for switching to dark
           ) : (
             <SunIcon className="h-5 w-5" /> // Sun icon for switching to light
           )}
-           {/* Optional: Add text label for clarity */}
-           {/* <span className="text-sm hidden sm:inline">{theme === 'light' ? 'Dark' : 'Light'}</span> */}
+          {/* Optional: Add text label for clarity */}
+          <span className="text-sm hidden sm:inline">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
         </button>
       </div>
     </nav>

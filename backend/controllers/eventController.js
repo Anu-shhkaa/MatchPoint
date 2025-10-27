@@ -1,3 +1,4 @@
+// controllers/eventController.js
 import Event from '../models/Event.js';
 import PointsTable from '../models/PointsTable.js';
 import multer from 'multer';
@@ -28,12 +29,11 @@ const upload = multer({
   }
 });
 
-// Create Event
+// Create Event (without auth)
 const createEvent = async (req, res) => {
   try {
     console.log('Creating event with data:', req.body);
     console.log('Uploaded file:', req.file);
-    console.log('User from auth:', req.user);
     
     let posterPath = '';
     
@@ -54,7 +54,7 @@ const createEvent = async (req, res) => {
       description: req.body.description || '',
       location: req.body.location || '',
       poster: posterPath,
-      createdBy: req.user.id
+      // REMOVED: createdBy: req.user.id
     };
 
     console.log('Final event data to save:', eventData);
@@ -85,41 +85,65 @@ const createEvent = async (req, res) => {
   }
 };
 
-// Get All Events
+// Get All Events (remove user population)
 const getAllEvents = async (req, res) => {
   try {
+    console.log('Fetching all events...');
+    
     const events = await Event.find()
-      .populate('sports')
-      .populate('teams')
-      .populate('pointingSystem')
-      .populate('createdBy', 'name email');
-    res.json(events);
+      .populate('sports', 'name type')
+      .populate('teams', 'name logo')
+      .populate('pointingSystem', 'name pointsPerWin pointsPerLoss pointsPerDraw')
+      // REMOVED: .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+
+    console.log(`Found ${events.length} events`);
+    
+    res.json({
+      success: true,
+      count: events.length,
+      data: events
+    });
   } catch (error) {
     console.error('Error fetching events:', error);
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error while fetching events', 
+      error: error.message 
+    });
   }
 };
 
-// Get Event Details
+// Get Event Details (remove user population)
 const getEventDetails = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('sports')
-      .populate('teams')
-      .populate('pointingSystem')
-      .populate('createdBy', 'name email');
+      .populate('sports', 'name type')
+      .populate('teams', 'name logo')
+      .populate('pointingSystem', 'name pointsPerWin pointsPerLoss pointsPerDraw');
+      // REMOVED: .populate('createdBy', 'name email');
       
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Event not found' 
+      });
     }
-    res.json(event);
+    
+    res.json({
+      success: true,
+      data: event
+    });
   } catch (error) {
     console.error('Error fetching event details:', error);
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
+    });
   }
 };
 
-// Export all functions
 export { 
   upload,
   createEvent,

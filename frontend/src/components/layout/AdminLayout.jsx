@@ -1,186 +1,500 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import {
-  ChartBarIcon,
-  CalendarDaysIcon,
-  Cog6ToothIcon,
-  ArrowLeftOnRectangleIcon,
-  Bars3Icon,
-  XMarkIcon,
-  PlusIcon,
-  UserCircleIcon
-} from '@heroicons/react/24/solid';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/API_Service';
+import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
+import { PlusIcon, CalendarDaysIcon, PhotoIcon, TrophyIcon, UserGroupIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
 
-const AdminLayout = () => {
-  const { logout, user } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const AdminEventCreatePage = () => {
+  const [eventName, setEventName] = useState('');
+  const [eventType, setEventType] = useState('Sphurti');
+  const [selectedSports, setSelectedSports] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+  const [selectedSystem, setSelectedSystem] = useState('');
+  const [hasJoker, setHasJoker] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [poster, setPoster] = useState(null);
+  const [posterPreview, setPosterPreview] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  // Data from API
+  const [allSports, setAllSports] = useState([]);
+  const [allTeams, setAllTeams] = useState([]);
+  const [allSystems, setAllSystems] = useState([]);
+
+  const navigate = useNavigate();
+
+  // Fetch all the data needed for the dropdowns
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [sportsRes, teamsRes, systemsRes] = await Promise.all([
+          api.get('/data/sports'),
+          api.get('/data/teams'),
+          api.get('/data/pointing-systems')
+        ]);
+        
+        // Format for react-select
+        setAllSports(sportsRes.data.map(s => ({ value: s._id, label: `${s.name} (${s.genderCategory})` })));
+        setAllTeams(teamsRes.data.map(t => ({ value: t._id, label: `${t.name} (${t.teamType})` })));
+        setAllSystems(systemsRes.data.map(s => ({ value: s._id, label: s.systemName })));
+
+      } catch (err) {
+        console.error("Failed to load form data", err);
+        alert('Failed to load form data: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Handle poster image selection
+  const handlePosterChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPEG, PNG, etc.)');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Please select an image smaller than 5MB');
+        return;
+      }
+      
+      setPoster(file);
+      const previewUrl = URL.createObjectURL(file);
+      setPosterPreview(previewUrl);
+    }
   };
 
-  // Enhanced NavLink styling with better visual hierarchy
-  const getNavLinkClass = ({ isActive }) => {
-    const baseClasses = "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 group";
-    const activeClasses = "bg-primary-600 text-white shadow-md shadow-primary-500/25";
-    const inactiveClasses = "text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-text-light-primary dark:hover:text-text-dark-primary hover:translate-x-1";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedSystem) {
+      alert('Please select a pointing system');
+      return;
+    }
 
-    return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
+    if (!startDate || !endDate) {
+      alert('Please select both start and end dates');
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      alert('End date cannot be before start date');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('name', eventName);
+      formData.append('eventType', eventType);
+      formData.append('sports', JSON.stringify(selectedSports.map(s => s.value)));
+      formData.append('teams', JSON.stringify(selectedTeams.map(t => t.value)));
+      formData.append('pointingSystem', selectedSystem.value);
+      formData.append('hasJokerFeature', hasJoker);
+      formData.append('startDate', startDate);
+      formData.append('endDate', endDate);
+      
+      if (poster) {
+        formData.append('poster', poster);
+      }
+
+      console.log('📤 Sending event data...');
+      const res = await api.post('/events', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      alert('Event created successfully!');
+      navigate(`/admin/events/${res.data._id}`);
+      
+    } catch (err) {
+      console.error('❌ Failed to create event:', err);
+      alert('Error: ' + (err.response?.data?.message || 'Failed to create event'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Mobile sidebar close handler
-  const handleMobileNavClick = () => {
-    setSidebarOpen(false);
-  };
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+      <span className="ml-3 text-lg text-blue-200">Loading form data...</span>
+    </div>
+  );
 
   return (
-    <div className="flex h-screen bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary transition-colors duration-200">
-
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity duration-300"
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-surface-light dark:bg-surface-dark shadow-xl z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 border-r border-gray-200 dark:border-gray-800 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Sidebar Header */}
-        <div className="flex justify-between items-center p-6 h-20 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <ChartBarIcon className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-primary-800 dark:text-primary-200">
-                MatchPoint
-              </h1>
-              <p className="text-xs text-primary-600 dark:text-primary-400 font-medium">
-                Admin Portal
-              </p>
-            </div>
-          </div>
-          
-          {/* Close button for mobile */}
-          <button 
-            onClick={() => setSidebarOpen(false)} 
-            className="md:hidden p-2 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-white dark:hover:bg-gray-800 hover:text-primary-600 transition-colors"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="p-3 bg-blue-600/20 rounded-xl border border-blue-500/30">
+          <PlusIcon className="h-8 w-8 text-blue-400" />
         </div>
-
-        {/* User Info */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <div className="flex items-center gap-3">
-            <UserCircleIcon className="h-10 w-10 text-primary-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-text-light-primary dark:text-text-dark-primary truncate">
-                {user?.name || 'Admin User'}
-              </p>
-              <p className="text-xs text-text-light-secondary dark:text-text-dark-secondary truncate">
-                {user?.email || 'admin@matchpoint.com'}
-              </p>
-            </div>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
+          <p className="text-blue-200/70 text-lg">
+            Set up a new sports event with teams, sports, and scoring systems
+          </p>
         </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 flex flex-col p-4 space-y-1 overflow-y-auto">
-          <NavLink 
-            to="/admin/dashboard" 
-            className={getNavLinkClass} 
-            onClick={handleMobileNavClick}
-          >
-            <ChartBarIcon className="h-5 w-5" />
-            <span>Dashboard</span>
-          </NavLink>
-          
-          <NavLink 
-            to="/admin/events" 
-            className={getNavLinkClass} 
-            onClick={handleMobileNavClick}
-          >
-            <CalendarDaysIcon className="h-5 w-5" />
-            <span>Manage Events</span>
-          </NavLink>
-          
-          <NavLink 
-            to="/admin/events/create" 
-            className={getNavLinkClass} 
-            onClick={handleMobileNavClick}
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span>Create Event</span>
-          </NavLink>
-          
-          <NavLink 
-            to="/admin/manage-data" 
-            className={getNavLinkClass} 
-            onClick={handleMobileNavClick}
-          >
-            <Cog6ToothIcon className="h-5 w-5" />
-            <span>Manage Data</span>
-          </NavLink>
-        </nav>
-
-        {/* Logout Button */}
-        <div className="p-4 mt-auto border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <button
-            onClick={handleLogout}
-            className="flex items-center w-full gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 transition-all duration-200 group border border-transparent hover:border-red-200"
-          >
-            <ArrowLeftOnRectangleIcon className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Header Bar */}
-        <header className="flex justify-between items-center p-4 h-20 bg-surface-light dark:bg-surface-dark shadow-sm border-b border-gray-200 dark:border-gray-800">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="md:hidden p-2 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 transition-colors"
-            aria-label="Open sidebar"
-          >
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-
-          {/* Page Title - You can make this dynamic based on current route */}
-          <div className="flex-1 md:flex-none">
-            <h2 className="text-xl font-bold text-text-light-primary dark:text-text-dark-primary ml-4 md:ml-0">
-              Admin Dashboard
-            </h2>
-          </div>
-
-          {/* User Profile/Notifications could go here */}
-          <div className="flex items-center gap-4">
-            {/* Add notification bell, user menu etc. here */}
-            <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-              <UserCircleIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8 bg-background-light dark:bg-background-dark">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
-        </main>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Event Basic Info */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Left Column - Basic Info */}
+          <div className="space-y-6">
+            {/* Event Name */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <TrophyIcon className="h-5 w-5 text-blue-400" />
+                <label className="block text-lg font-semibold text-blue-200">Event Name *</label>
+              </div>
+              <input 
+                type="text" 
+                placeholder="e.g., Indoor Sphurti 2025"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                className="w-full px-4 py-3 border border-blue-700/30 rounded-lg bg-slate-800/50 text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                required
+              />
+            </div>
+
+            {/* Event Type */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <Cog6ToothIcon className="h-5 w-5 text-blue-400" />
+                <label className="block text-lg font-semibold text-blue-200">Event Type *</label>
+              </div>
+              <select 
+                value={eventType} 
+                onChange={(e) => setEventType(e.target.value)}
+                className="w-full px-4 py-3 border border-blue-700/30 rounded-lg bg-slate-800/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+              >
+                <option value="Sphurti" className="bg-slate-800 text-white">Sphurti (Multi-Sport)</option>
+                <option value="VPL" className="bg-slate-800 text-white">VPL (League)</option>
+                <option value="VCL" className="bg-slate-800 text-white">VCL (League)</option>
+                <option value="Other" className="bg-slate-800 text-white">Other</option>
+              </select>
+            </div>
+
+            {/* Event Dates */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <CalendarDaysIcon className="h-5 w-5 text-blue-400" />
+                <label className="block text-lg font-semibold text-blue-200">Event Dates *</label>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-blue-200 mb-2">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-4 py-3 border border-blue-700/30 rounded-lg bg-slate-800/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-200 mb-2">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-4 py-3 border border-blue-700/30 rounded-lg bg-slate-800/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Poster & Settings */}
+          <div className="space-y-6">
+            {/* Poster Upload */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <PhotoIcon className="h-5 w-5 text-blue-400" />
+                <label className="block text-lg font-semibold text-blue-200">Event Poster</label>
+              </div>
+              <div className="space-y-4">
+                {posterPreview && (
+                  <div className="text-center">
+                    <img 
+                      src={posterPreview} 
+                      alt="Poster preview" 
+                      className="max-h-64 mx-auto rounded-lg shadow-lg border border-blue-600/30"
+                    />
+                    <p className="text-sm text-blue-300/70 mt-2">Preview</p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePosterChange}
+                  className="block w-full text-sm text-blue-300 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-colors cursor-pointer"
+                />
+                <p className="text-xs text-blue-300/70">Recommended: 16:9 ratio, max 5MB</p>
+              </div>
+            </div>
+
+            {/* Pointing System */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <ChartBarIcon className="h-5 w-5 text-blue-400" />
+                <label className="block text-lg font-semibold text-blue-200">Select Pointing System *</label>
+              </div>
+              <Select
+                options={allSystems}
+                value={selectedSystem}
+                onChange={setSelectedSystem}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                placeholder="Choose a pointing system..."
+                required
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    color: 'white',
+                    borderRadius: '8px',
+                    padding: '6px',
+                    '&:hover': {
+                      borderColor: 'rgba(59, 130, 246, 0.5)'
+                    }
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: '#1e293b',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#334155'
+                    }
+                  }),
+                  singleValue: (base) => ({
+                    ...base,
+                    color: 'white'
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: 'rgba(147, 197, 253, 0.5)'
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    color: 'white'
+                  })
+                }}
+              />
+            </div>
+
+            {/* Joker Feature */}
+            <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+              <div className="flex items-start space-x-4">
+                <div className="flex items-center h-5 mt-1">
+                  <input
+                    type="checkbox"
+                    id="joker"
+                    checked={hasJoker}
+                    onChange={(e) => setHasJoker(e.target.checked)}
+                    className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 border-blue-700/30 bg-slate-800"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="joker" className="block text-lg font-semibold text-blue-200 mb-2">
+                    Enable Joker Feature
+                  </label>
+                  <p className="text-sm text-blue-300/70">
+                    Allows teams to play a joker match for double points. This adds strategic depth to the tournament.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sports and Teams Selection */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Sports Selection */}
+          <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <TrophyIcon className="h-5 w-5 text-blue-400" />
+              <label className="block text-lg font-semibold text-blue-200">Select Participating Sports</label>
+            </div>
+            <Select
+              isMulti
+              options={allSports}
+              value={selectedSports}
+              onChange={setSelectedSports}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              placeholder="Select sports..."
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  backgroundColor: '#1e293b',
+                  borderColor: 'rgba(59, 130, 246, 0.3)',
+                  color: 'white',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  '&:hover': {
+                    borderColor: 'rgba(59, 130, 246, 0.5)'
+                  }
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: '#1e293b',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(59, 130, 246, 0.3)'
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#334155'
+                  }
+                }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: '#334155'
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  color: 'white'
+                }),
+                multiValueRemove: (base) => ({
+                  ...base,
+                  color: '#93c5fd',
+                  '&:hover': {
+                    backgroundColor: '#dc2626',
+                    color: 'white'
+                  }
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: 'rgba(147, 197, 253, 0.5)'
+                }),
+                input: (base) => ({
+                  ...base,
+                  color: 'white'
+                })
+              }}
+            />
+          </div>
+
+          {/* Teams Selection */}
+          <div className="bg-slate-800/30 backdrop-blur-sm p-6 rounded-xl border border-blue-800/20 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <UserGroupIcon className="h-5 w-5 text-blue-400" />
+              <label className="block text-lg font-semibold text-blue-200">Select Participating Teams</label>
+            </div>
+            <Select
+              isMulti
+              options={allTeams}
+              value={selectedTeams}
+              onChange={setSelectedTeams}
+              className="react-select-container"
+              classNamePrefix="react-select"
+              placeholder="Select teams..."
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  backgroundColor: '#1e293b',
+                  borderColor: 'rgba(59, 130, 246, 0.3)',
+                  color: 'white',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  '&:hover': {
+                    borderColor: 'rgba(59, 130, 246, 0.5)'
+                  }
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: '#1e293b',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(59, 130, 246, 0.3)'
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isFocused ? '#334155' : '#1e293b',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#334155'
+                  }
+                }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: '#334155'
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  color: 'white'
+                }),
+                multiValueRemove: (base) => ({
+                  ...base,
+                  color: '#93c5fd',
+                  '&:hover': {
+                    backgroundColor: '#dc2626',
+                    color: 'white'
+                  }
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: 'rgba(147, 197, 253, 0.5)'
+                }),
+                input: (base) => ({
+                  ...base,
+                  color: 'white'
+                })
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-end pt-6">
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-12 py-4 text-lg rounded-xl font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center gap-3 shadow-lg border border-blue-500/30"
+          >
+            {submitting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Creating Event...
+              </>
+            ) : (
+              <>
+                <PlusIcon className="h-5 w-5" />
+                Create Event
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default AdminLayout;
+// Add missing icons
+const ChartBarIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
+  </svg>
+);
+
+export default AdminEventCreatePage;

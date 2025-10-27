@@ -37,11 +37,14 @@ const eventSchema = new mongoose.Schema({
   location: {
     type: String,
   },
-  createdBy: {  // Add createdBy field
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    //required: true
-  }
+  poster: {  // Add this missing field
+    type: String,
+  },
+  // createdBy: {  // Add createdBy field
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'User',
+  //   //required: true
+  // }
   // ... poster, dates ...
 }, { timestamps: true });
 

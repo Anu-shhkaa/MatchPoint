@@ -4,15 +4,16 @@ import {
   createEvent,
   getAllEvents,
   getEventDetails,
+  upload
 } from '../controllers/eventController.js';
 
 const router = express.Router();
 
 router.route('/')
-  .post(protect, createEvent) // Admin creates a new event
-  .get(getAllEvents);         // Viewers get list of all events
+  .post(protect, upload.single('poster'), createEvent) // Add file upload middleware
+  .get(getAllEvents);
 
 router.route('/:id')
-  .get(getEventDetails);     // Viewers get details for one event
+  .get(getEventDetails);
 
 export default router;

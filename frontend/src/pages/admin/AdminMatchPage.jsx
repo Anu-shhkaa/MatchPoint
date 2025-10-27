@@ -1,159 +1,147 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/API_Service';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSocket } from '../../context/SocketContext';
-import Modal from '../../components/common/Modal'; // <-- 1. IMPORT THE MODAL
 
 const AdminMatchPage = () => {
-  const { matchId } = useParams();
-  const navigate = useNavigate();
-  const socket = useSocket();
-  
-  const [match, setMatch] = useState(null);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scoreA, setScoreA] = useState(0);
-  const [scoreB, setScoreB] = useState(0);
-  
-  // State for final result form
-  const [winner, setWinner] = useState('');
-  const [winnerAch, setWinnerAch] = useState(0);
-  const [loserAch, setLoserAch] = useState(0);
-  const [finalScore, setFinalScore] = useState('');
+  const [error, setError] = useState('');
 
-  // --- 2. ADD STATE FOR THE MODAL ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // --- 1. Fetch Match Data ---
   useEffect(() => {
-    const fetchMatch = async () => {
+    const fetchMatches = async () => {
       try {
-        // ... (existing code) ...
-        // This logic is all correct
-        const res = await api.get(`/api/matches/${matchId}`);
-        setMatch(res.data);
-        setScoreA(res.data.score?.teamA_score || 0);
-        setScoreB(res.data.score?.teamB_score || 0);
-        // Pre-fill form if data exists
-        setWinner(res.data.result?.winnerTeam || '');
-        setWinnerAch(res.data.result?.winnerAchievement || 0);
-        setLoserAch(res.data.result?.loserAchievement || 0);
-        setFinalScore(res.data.result?.score || '0-0');
-        setLoading(false);
+        setLoading(true);
+        console.log('🔄 Fetching all matches...');
+        
+        const response = await api.get('/matches');
+        console.log('📦 All matches data:', response.data);
+        
+        setMatches(response.data);
       } catch (err) {
-        console.error(err);
+        console.error('❌ Error fetching matches:', err);
+        setError('Failed to load matches: ' + (err.message || 'Unknown error'));
+      } finally {
         setLoading(false);
       }
     };
-    fetchMatch();
-  }, [matchId]);
-
-  // --- 2. Live Score Update Function ---
-  // This logic is correct
-  const handleScoreUpdate = (team, points) => {
-    // ... (existing code) ...
-    let newScoreA = scoreA;
-    let newScoreB = scoreB;
-
-    if (team === 'A') {
-      newScoreA += points;
-      setScoreA(newScoreA);
-    } else {
-      newScoreB += points;
-      setScoreB(newScoreB);
-    }
     
-    if (socket) {
-      socket.emit('updateScore', {
-        matchId,
-        score: { // Send score as an object
-          teamA_score: newScoreA,
-          teamB_score: newScoreB,
-        }
-      });
-    }
-  };
+    fetchMatches();
+  }, []); // Empty dependency array - only run once on mount
 
-  // --- 3. Final Result Submit Function ---
-  const handleFinalizeMatch = async () => { // <-- 4. REMOVED 'e' PARAMETER
-    // e.preventDefault(); // <-- No longer needed
-    if (!winner) return alert('Please select a winner');
-    
-    const loser = winner === match.teamA._id ? match.teamB._id : match.teamA._id;
-    
-    const resultData = {
-      winnerTeam: winner,
-      loserTeam: loser,
-      winnerAchievement: Number(winnerAch),
-      loserAchievement: Number(loserAch),
-      score: finalScore,
-    };
-    
-    try {
-      await api.put(`/api/matches/${matchId}/result`, resultData);
-      alert('Match finalized and points table updated!');
-      setIsModalOpen(false); // Close the modal on success
-      navigate(`/admin/events/${match.event._id}`); // Go back
-    } catch (err) {
-      console.error(err);
-      alert('Failed to finalize match.');
-    }
-  };
+  // ✅ REMOVE any fetchMatch function that's causing the undefined ID error
+  // If you have something like this, DELETE IT:
+  /*
+  const fetchMatch = async (matchId) => {
+    // This is causing the undefined error
+  }
+  */
 
-  if (loading) return <div>Loading match...</div>; // You can use your <Spinner />
-  if (!match) return <div>Match not found.</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3">Loading matches...</span>
+      </div>
+    );
+  }
 
-  const pointingLevels = match.event.pointingSystem.levels;
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong>Error: </strong> {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Manage Match</h1>
-      {/* ... (existing code for h2 title) ... */}
-      
-      {/* --- Live Score Panel --- */}
-      {/* ... (existing code for score panel) ... */}
-      
-      {/* --- Final Result Form --- */}
-      <form className="p-4 bg-surface-light dark:bg-surface-dark rounded-md shadow space-y-4">
-        <h3 className="text-xl font-bold mb-4">Finalize Match Result</h3>
-        {/* ... (existing code for form inputs) ... */}
-        
-        {/* --- 5. UPDATED BUTTON --- */}
-        <button 
-          type="button" // Changed from "submit"
-          className="btn-danger"
-          onClick={() => setIsModalOpen(true)} // Opens the modal
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Manage Matches
+        </h1>
+        <Link 
+          to="/admin/dashboard"
+          className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
         >
-          Finalize Match
-        </button>
-      </form>
+          Back to Dashboard
+        </Link>
+      </div>
 
-      {/* --- 6. ADD THE MODAL COMPONENT --- */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Confirm Finalize Match"
-      >
-        <p className="text-text-light-secondary dark:text-text-dark-secondary">
-          Are you sure you want to finalize this match? This action is permanent and will update the points table.
-        </p>
-        <div className="mt-6 flex gap-4">
-          <button 
-            className="btn-danger" 
-            onClick={handleFinalizeMatch} // Calls the finalize function
-          >
-            Yes, Finalize Match
-          </button>
-          <button 
-            className="btn-secondary" 
-            onClick={() => setIsModalOpen(false)}
-          >
-            Cancel
-          </button>
+      {matches.length === 0 ? (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+          <p>No matches found.</p>
+          <p className="text-sm mt-1">
+            Create events first, then matches will be available here.
+          </p>
         </div>
-      </Modal>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Match
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Sport & Event
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {matches.map((match) => (
+                <tr key={match._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {match.teamA?.name || 'Team A'} vs {match.teamB?.name || 'Team B'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500 dark:text-gray-300">
+                      <div>{match.sport?.name || 'Unknown Sport'}</div>
+                      <div className="text-xs">{match.event?.name || 'Unknown Event'}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      match.status === 'live' 
+                        ? 'bg-green-100 text-green-800' 
+                        : match.status === 'completed'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {match.status?.toUpperCase() || 'SCHEDULED'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {match.score || '0-0'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <Link
+                      to={`/admin/match/${match._id}/control`}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 mr-2"
+                    >
+                      Control
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
 export default AdminMatchPage;
-

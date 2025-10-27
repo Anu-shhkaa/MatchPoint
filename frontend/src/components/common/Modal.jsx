@@ -1,21 +1,12 @@
 import React, { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react'; // You'll need to install: npm install @headlessui/react
+import { Dialog, Transition } from '@headlessui/react'; // Needs: npm install @headlessui/react
 import { XMarkIcon } from '@heroicons/react/24/solid';
 
-/**
- * A reusable Modal component.
- *
- * @param {boolean} isOpen - Whether the modal is open or not
- * @param {function} onClose - Function to call when the modal should close
- * @param {string} title - The title of the modal
- * @param {React.ReactNode} children - The content of the modal
- */
 const Modal = ({ isOpen, onClose, title, children }) => {
   return (
-    // 'Transition' handles the fade in/out animations
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
-        {/* The backdrop overlay */}
+        {/* Backdrop */}
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -25,10 +16,10 @@ const Modal = ({ isOpen, onClose, title, children }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-50" />
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" /> 
         </Transition.Child>
 
-        {/* The modal panel */}
+        {/* Modal Panel */}
         <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4 text-center">
             <Transition.Child
@@ -40,25 +31,27 @@ const Modal = ({ isOpen, onClose, title, children }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-light dark:bg-surface-dark p-6 text-left align-middle shadow-xl transition-all">
-                {/* Modal Header */}
-                <div className="flex justify-between items-center">
+              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-lg bg-surface-light dark:bg-surface-dark p-6 text-left align-middle shadow-xl transition-all">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-4">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-text-light-primary dark:text-text-dark-primary"
+                    className="text-xl font-semibold leading-6 text-text-light-primary dark:text-text-dark-primary"
                   >
-                    {title}
+                    {title || 'Modal Title'}
                   </Dialog.Title>
                   <button
+                    type="button"
                     onClick={onClose}
-                    className="p-1 rounded-full text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700"
+                    className="-mt-2 -mr-2 p-2 rounded-full text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-label="Close modal"
                   >
                     <XMarkIcon className="h-6 w-6" />
                   </button>
                 </div>
 
-                {/* Modal Body */}
-                <div className="mt-4">
+                {/* Body */}
+                <div className="mt-2 text-sm text-text-light-secondary dark:text-text-dark-secondary">
                   {children}
                 </div>
               </Dialog.Panel>
@@ -71,3 +64,4 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 };
 
 export default Modal;
+

@@ -2,74 +2,76 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/API_Service';
 import { useSocket } from '../../context/SocketContext';
 import { Link } from 'react-router-dom';
-
-// --- Import the reusable components ---
+import Footer from '../../components/layout/Footer';
+import Navbar from '../../components/layout/Navbar';
 import LiveScoreCard from '../../components/viewer/LiveScoreCard';
 import EventCard from '../../components/viewer/EventCard';
-// You can create this spinner component later
-// import Spinner from '../../components/common/Spinner';
 
 const HomePage = () => {
-  // --- FIX 1: Ensure initial state is always an array ---
   const [liveMatches, setLiveMatches] = useState([]);
   const [recentMatches, setRecentMatches] = useState([]);
   const [events, setEvents] = useState([]);
-  // --- End Fix ---
   const [loading, setLoading] = useState(true);
   const socket = useSocket();
 
-  // --- 1. Function to Fetch All Data ---
-  const fetchData = async () => {
-    setLoading(true); // Set loading true at the start
-    try {
-      const [liveMatchesRes, recentMatchesRes, eventsRes] = await Promise.all([
-        api.get('/api/matches?status=live&limit=4'),
-        api.get('/api/matches?status=completed&limit=4&sort=desc'),
-        api.get('/api/events?limit=4')
-      ]);
-
-      // --- FIX 2: Ensure API data is treated as an array ---
-      setLiveMatches(Array.isArray(liveMatchesRes.data) ? liveMatchesRes.data : []);
-      setRecentMatches(Array.isArray(recentMatchesRes.data) ? recentMatchesRes.data : []);
-      setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
-      // --- End Fix ---
-
-    } catch (err) {
-      console.error("Error fetching homepage data", err);
-      // Set to empty arrays on error to prevent crashes
-      setLiveMatches([]);
-      setRecentMatches([]);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // --- 2. Fetch Data on Initial Load ---
+  // Single useEffect for data fetching
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [liveMatchesRes, recentMatchesRes, eventsRes] = await Promise.all([
+          api.get('/matches?status=live&limit=4'),
+          api.get('/matches?status=completed&limit=4&sort=desc'),
+          api.get('/events?limit=4')
+        ]);
+
+        // Debug: Check event poster data
+        console.log('🎯 EVENTS WITH POSTER DATA:');
+        eventsRes.data.forEach(event => {
+          console.log(`📸 Event: ${event.name}`, {
+            id: event._id,
+            poster: event.poster,
+            hasPoster: !!event.poster,
+            fullPosterUrl: event.poster ? `http://localhost:5000${event.poster}` : 'No poster',
+            posterExists: event.poster ? 'Yes' : 'No'
+          });
+        });
+
+        setLiveMatches(Array.isArray(liveMatchesRes.data) ? liveMatchesRes.data : []);
+        setRecentMatches(Array.isArray(recentMatchesRes.data) ? recentMatchesRes.data : []);
+        setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
+
+      } catch (err) {
+        console.error("Error fetching homepage data", err);
+        setLiveMatches([]);
+        setRecentMatches([]);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
   }, []);
 
-  // --- 3. Listen for Real-Time Socket Events ---
+  // Socket effects
   useEffect(() => {
     if (socket) {
       socket.on('scoreUpdated', (updatedScore) => {
         setLiveMatches(prevMatches =>
-          // Make sure prevMatches is an array before mapping
           Array.isArray(prevMatches) ? prevMatches.map(m =>
             m._id === updatedScore.matchId
               ? { ...m, score: updatedScore.score }
               : m
-          ) : [] // Default to empty array if something went wrong
+          ) : []
         );
       });
 
       socket.on('matchStarted', (newMatch) => {
-        fetchData(); // Re-fetch all data for simplicity
+        fetchData();
       });
 
       socket.on('matchEnded', (endedMatchId) => {
-         fetchData(); // Re-fetch all data for simplicity
+        fetchData();
       });
 
       return () => {
@@ -80,82 +82,136 @@ const HomePage = () => {
     }
   }, [socket]);
 
-  // --- Loading State ---
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-lg">Loading Dashboard...</p>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-lg">Loading Dashboard...</span>
       </div>
     );
   }
 
-  // --- Render Content ---
   return (
-    <div className="space-y-12 p-4 md:p-6">
-
-      {/* --- Live Matches Section --- */}
-      <section>
-        {/* ... (section header code remains the same) ... */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* --- FIX 3: Check if it's an array AND has items before mapping --- */}
-          {Array.isArray(liveMatches) && liveMatches.length > 0 ? (
-            liveMatches.map(match => <LiveScoreCard key={match._id} match={match} />)
-          ) : (
-            <p className="text-text-light-secondary dark:text-text-dark-secondary col-span-full"> {/* Added col-span-full */}
-              No live matches right now.
-            </p>
-          )}
-          {/* --- End Fix --- */}
-        </div>
-      </section>
-
-      {/* --- Events Section --- */}
-      <section>
-       {/* ... (section header code remains the same) ... */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-           {/* Add array check here too for safety */}
-           {Array.isArray(events) && events.length > 0 ? (
-            events.map(event => <EventCard key={event._id} event={event} />)
-          ) : (
-            <p className="text-text-light-secondary dark:text-text-dark-secondary col-span-full"> {/* Added col-span-full */}
-              No events found.
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* --- Recent Matches Section --- */}
-      <section>
-        <h2 className="text-3xl font-bold mb-4">Recent Results</h2>
-         <div className="space-y-4">
-          {/* Add array check here too */}
-          {Array.isArray(recentMatches) && recentMatches.length > 0 ? (
-            recentMatches.map(match => (
-              <div
-                key={match._id}
-                className="bg-surface-light dark:bg-surface-dark p-4 rounded-lg shadow-md flex justify-between items-center"
-              >
-                <div>
-                  <span className="text-green-500 text-xs font-bold">FINISHED</span>
-                  <h3 className="font-bold">{match.sport?.name || 'Sport'}</h3> {/* Safe access */}
-                  <p className="text-sm">
-                    {match.result?.winnerTeam?.name || 'N/A'} beat {match.result?.loserTeam?.name || 'N/A'}
-                  </p>
-                </div>
-                <p className="font-bold text-lg">{match.result?.score || 'N/A'}</p>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark">
+      <Navbar />
+      
+      <div className="container mx-auto px-4 py-8 space-y-12">
+        {/* Live Matches Section */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-text-light-primary dark:text-text-dark-primary">
+              Live Matches
+            </h2>
+            <Link 
+              to="/matches/live" 
+              className="text-blue-600 hover:text-blue-700 text-sm md:text-base"
+            >
+              View All →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+            {Array.isArray(liveMatches) && liveMatches.length > 0 ? (
+              liveMatches.map(match => <LiveScoreCard key={match._id} match={match} />)
+            ) : (
+              <div className="col-span-full bg-surface-light dark:bg-surface-dark rounded-lg p-8 text-center">
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-lg">
+                  No live matches right now.
+                </p>
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm mt-2">
+                  Check back later for live action!
+                </p>
               </div>
-            ))
-          ) : (
-            <p className="text-text-light-secondary dark:text-text-dark-secondary">
-              No recent matches.
-            </p>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
 
+        {/* Events Section */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-text-light-primary dark:text-text-dark-primary">
+              Upcoming Events
+            </h2>
+            <Link 
+              to="/events" 
+              className="text-blue-600 hover:text-blue-700 text-sm md:text-base"
+            >
+              View All →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {Array.isArray(events) && events.length > 0 ? (
+              events.map(event => <EventCard key={event._id} event={event} />)
+            ) : (
+              <div className="col-span-full bg-surface-light dark:bg-surface-dark rounded-lg p-8 text-center">
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-lg">
+                  No events found.
+                </p>
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm mt-2">
+                  Events will appear here when created.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Recent Matches Section */}
+        <section>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-text-light-primary dark:text-text-dark-primary">
+              Recent Results
+            </h2>
+            <Link 
+              to="/matches/completed" 
+              className="text-blue-600 hover:text-blue-700 text-sm md:text-base"
+            >
+              View All →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            {Array.isArray(recentMatches) && recentMatches.length > 0 ? (
+              recentMatches.map(match => (
+                <div
+                  key={match._id}
+                  className="bg-surface-light dark:bg-surface-dark p-4 md:p-6 rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                >
+                  <div className="flex-1">
+                    <span className="text-green-500 text-xs font-bold bg-green-50 dark:bg-green-900 px-2 py-1 rounded">
+                      FINISHED
+                    </span>
+                    <h3 className="font-bold text-lg mt-2 text-text-light-primary dark:text-text-dark-primary">
+                      {match.sport?.name || 'Sport'}
+                    </h3>
+                    <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm mt-1">
+                      {match.result?.winnerTeam?.name || 'N/A'} beat {match.result?.loserTeam?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900 px-4 py-3 rounded-lg min-w-20 text-center">
+                    <p className="font-bold text-xl text-blue-600 dark:text-blue-300">
+                      {match.result?.score || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full bg-surface-light dark:bg-surface-dark rounded-lg p-8 text-center">
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-lg">
+                  No recent matches.
+                </p>
+                <p className="text-text-light-secondary dark:text-text-dark-secondary text-sm mt-2">
+                  Completed matches will appear here.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+      
+      <Footer />
     </div>
   );
 };
 
 export default HomePage;
-

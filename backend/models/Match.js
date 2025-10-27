@@ -36,17 +36,31 @@ const matchSchema = new mongoose.Schema({
     enum: ['scheduled', 'live', 'completed'],
     default: 'scheduled',
   },
+  // Add score field for live updates
+  score: {
+    type: String,
+    default: '0-0'
+  },
   // Structured result for calculations
   result: {
     winnerTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
     loserTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
-    winnerAchievement: { type: Number, default: 0 }, // 5, 4, 3...
+    winnerAchievement: { type: Number, default: 0 },
     loserAchievement: { type: Number, default: 0 },
-    score: { type: String } // "2-1"
+    score: { type: String }
+  },
+  matchDate: {
+    type: Date,
+    default: Date.now
+  },
+  venue: {
+    type: String
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true 
+});
 
 const Match = mongoose.model('Match', matchSchema);
-// Export the levels so we can use them elsewhere in our code
-export { Match, achievementLevels };
 
+// Export both Match and achievementLevels
+export { Match, achievementLevels };

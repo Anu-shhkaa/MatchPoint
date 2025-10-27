@@ -1,68 +1,44 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { HomeIcon, CalendarIcon, PlayIcon, Bars3Icon } from '@heroicons/react/24/solid';
-import { useTheme } from '../../context/ThemeContext'; // Import theme hook
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import { NavLink, useLocation } from 'react-router-dom';
+import { HomeIcon, CalendarDaysIcon, PlayIcon, Bars3Icon } from '@heroicons/react/24/solid';
 
-const Footer = () => { // Renamed from ViewerLayout
-  const { theme, toggleTheme } = useTheme();
-
-  // This function adds Tailwind classes conditionally
-  const getNavLinkClass = ({ isActive }) => {
-    const baseClasses = "flex flex-col items-center justify-center flex-1 p-2";
-    const activeClasses = "text-primary-DEFAULT"; // Your main blue color
-    const inactiveClasses = "text-text-light-secondary dark:text-text-dark-secondary";
+const Footer = () => {
+  const location = useLocation();
+  
+  const getNavLinkClass = (path) => {
+    const base = "flex flex-col items-center justify-center flex-1 p-2 transition duration-200";
+    const isActive = location.pathname === path;
     
-    return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
+    if (isActive) {
+      return `${base} text-blue-600 dark:text-blue-400 font-semibold`;
+    } else {
+      return `${base} text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-300`;
+    }
   };
 
   return (
-    <div className="bg-background-light dark:bg-background-dark min-h-screen text-text-light-primary dark:text-text-dark-primary pb-20">
+    <footer className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-around items-center z-50 md:hidden">
+      <NavLink to="/" className={getNavLinkClass('/')}>
+        <HomeIcon className="h-6 w-6" />
+        <span className="text-xs mt-1">Home</span>
+      </NavLink>
       
-      {/* Top Navbar (from your mockup) */}
-      <nav className="bg-primary-DEFAULT shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-white text-2xl font-bold">MatchPoint</h1>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full bg-primary-dark text-white"
-        >
-          {theme === 'light' ? (
-            <MoonIcon className="h-6 w-6" />
-          ) : (
-            <SunIcon className="h-6 w-6" />
-          )}
-        </button>
-      </nav>
+      <NavLink to="/events" className={getNavLinkClass('/events')}>
+        <CalendarDaysIcon className="h-6 w-6" />
+        <span className="text-xs mt-1">Events</span>
+      </NavLink>
       
-      {/* Main Page Content */}
-      <main className="p-4">
-        {/* This Outlet tells the router where to render the child pages 
-            (like HomePage, EventDetailPage) */}
-        <Outlet />
-      </main>
+      <NavLink to="/matches/live" className={getNavLinkClass('/matches/live')}>
+        <PlayIcon className="h-6 w-6" />
+        <span className="text-xs mt-1">Live</span>
+      </NavLink>
       
-      {/* Footer (Bottom Navbar from your mockup) */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-700 flex justify-around items-center z-10">
-        <NavLink to="/" className={getNavLinkClass}>
-          <HomeIcon className="h-6 w-6" />
-          <span className="text-xs">Home</span>
-        </NavLink>
-        <NavLink to="/events" className={getNavLinkClass}> {/* You'll need to add this route to App.jsx */}
-          <CalendarIcon className="h-6 w-6" />
-          <span className="text-xs">Events</span>
-        </NavLink>
-        <NavLink to="/live" className={getNavLinkClass}> {/* You'll need to add this route too */}
-          <PlayIcon className="h-6 w-6" />
-          <span className="text-xs">Live</span>
-        </NavLink>
-        <NavLink to="/more" className={getNavLinkClass}> {/* And this one */}
-          <Bars3Icon className="h-6 w-6" />
-          <span className="text-xs">More</span>
-        </NavLink>
-      </nav>
-    </div>
+      <NavLink to="/more" className={getNavLinkClass('/more')}>
+        <Bars3Icon className="h-6 w-6" />
+        <span className="text-xs mt-1">More</span>
+      </NavLink>
+    </footer>
   );
 };
 
-export default Footer; // Renamed from ViewerLayout
-
+export default Footer;

@@ -13,7 +13,7 @@ const PointsTable = ({ eventId }) => {
     try {
       setLoading(true);
       // Call the API route we created
-      const res = await api.get(`/api/pointstable/${eventId}`);
+      const res = await api.get(`/pointstable/event/${eventId}`);
       // Sort by total points, descending
       res.data.sort((a, b) => b.totalPoints - a.totalPoints);
       setPoints(res.data);

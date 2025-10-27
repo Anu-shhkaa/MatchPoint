@@ -1,31 +1,38 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  darkMode: 'class',
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         primary: {
-          light: '#2563eb',
-          DEFAULT: '#1d4ed8',
-          dark: '#1e40af',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
         },
         background: {
-          light: '#f4f7f6',
-          dark: '#121212',
+          light: '#f8fafc',
+          dark: '#0f172a',
         },
         surface: {
           light: '#ffffff',
-          dark: '#1e1e1e',
+          dark: '#1e293b',
         },
         text: {
-          'light-primary': '#111827',
-          'light-secondary': '#6b7280',
-          'dark-primary': '#f9fafb',
-          'dark-secondary': '#9ca3af',
+          'light-primary': '#1e293b',
+          'light-secondary': '#64748b',
+          'dark-primary': '#f1f5f9',
+          'dark-secondary': '#94a3b8',
         }
       },
     },

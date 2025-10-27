@@ -4,44 +4,37 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-/**
- * @desc    Verify the admin secret code and generate a JWT
- * @route   POST /api/auth/verify-code
- * @access  Public
- */
 export const verifyAdminCode = (req, res) => {
   const { secretCode } = req.body;
 
-  // 1. Check if the secret code was provided
   if (!secretCode) {
     return res.status(400).json({ message: 'Please provide the admin secret code' });
   }
-console.log("Code from browser:", secretCode);
+
+  console.log("Code from browser:", secretCode);
   console.log("Code expected from .env:", process.env.ADMIN_SECRET_CODE);
-  // 2. Compare the provided code with the one in your .env file
+
   if (secretCode === process.env.ADMIN_SECRET_CODE) {
-    console.log("Code from browser:", secretCode);
-  console.log("Code expected from .env:", process.env.ADMIN_SECRET_CODE);
-    // 3. If they match, create a JWT (the "hand-stamp")
+    // ✅ FIX: Add user ID to JWT token
     const token = jwt.sign(
       { 
-        isAdmin: true,
-        // You can add more data here if you want, e.g., a user ID
+        id: '68fde9c80da7ac2dc38864d8', // ✅ ADD THIS LINE - user ID for createdBy
+        isAdmin: true,                   // ✅ KEEP this line
       }, 
-      process.env.JWT_SECRET, // Sign it with your invisible ink
+      process.env.JWT_SECRET,
       { 
-        expiresIn: '8h' // Token lasts for 8 hours
+        expiresIn: '8h'
       }
     );
 
-    // 4. Send the token back to the frontend
+    console.log('🔐 JWT token created with user ID');
+
     res.json({
       message: 'Authentication successful',
       token: token,
     });
 
   } else {
-    // 5. If codes do NOT match, send an "Unauthorized" error
     return res.status(401).json({ message: 'Invalid secret code. Access denied.' });
   }
 };

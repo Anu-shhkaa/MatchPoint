@@ -10,7 +10,8 @@ const eventSchema = new mongoose.Schema({
   },
   sports: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Sport'
+    ref: 'Sport',
+    // required: true 
   }],
   teams: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -25,6 +26,22 @@ const eventSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  description: {  // Add missing fields
+    type: String,
+  }, startDate: {
+    type: Date,
+  },
+  endDate: {
+    type: Date,
+  },
+  location: {
+    type: String,
+  },
+  createdBy: {  // Add createdBy field
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    //required: true
+  }
   // ... poster, dates ...
 }, { timestamps: true });
 

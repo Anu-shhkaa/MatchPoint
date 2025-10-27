@@ -5,7 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import AdminLayout from './components/layout/AdminLayout';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-
+import ControlLiveMatchPage from './pages/admin/ControlLiveMatchPage';
+//import AdminMatchPage from './pages/admin/AdminMatchPage'; // Add this import
 // Import Contexts
 import  {useAuth}  from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -36,7 +37,7 @@ const ViewerLayout = () => {
   return (
     <SocketProvider> {/* Socket connection for viewers */}
       <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary">
-        <Navbar />
+        {/* <Navbar /> */}
         <main className="flex-1 container mx-auto p-4">
           <Outlet /> {/* This renders the specific viewer page */}
         </main>
@@ -76,6 +77,9 @@ function App() {
         <Route path="/events/:eventId" element={<EventDetailPage />} />
         <Route path="/live" element={<LivePage />} />
         <Route path="/more" element={<MorePage />} />
+        <Route path="/admin/match/:matchId/control" element={<ControlLiveMatchPage />} />
+        <Route path="/admin/matches" element={<AdminMatchPage />} />
+        
       </Route>
 
       {/* --- Admin Routes --- */}

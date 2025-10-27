@@ -27,13 +27,18 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         // We'll use the "data" routes we created in the backend
+        // const [eventsRes, teamsRes, sportsRes, systemsRes] = await Promise.all([
+        //   api.get('/api/events'), // You'll need to create this route
+        //   api.get('/api/data/teams'),
+        //   api.get('/api/data/sports'),
+        //   api.get('/api/data/pointingsystems')
+        // ]);
         const [eventsRes, teamsRes, sportsRes, systemsRes] = await Promise.all([
-          api.get('/api/events'), // You'll need to create this route
-          api.get('/api/data/teams'),
-          api.get('/api/data/sports'),
-          api.get('/api/data/pointingsystems')
-        ]);
-        
+        api.get('/events'),                    // NOT /api/events
+        api.get('/data/teams'),                // NOT /api/data/teams
+        api.get('/data/sports'),               // NOT /api/data/sports  
+        api.get('/data/pointing-systems')      // NOT /api/data/pointingsystems
+      ]);
         setStats({
           events: eventsRes.data.length,
           teams: teamsRes.data.length,

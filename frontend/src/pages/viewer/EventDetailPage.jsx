@@ -16,8 +16,8 @@ const EventDetailPage = () => {
         setLoading(true);
         // You'll need to build these API routes
         const [eventRes, matchesRes] = await Promise.all([
-          api.get(`/api/events/${eventId}`),
-          api.get(`/api/matches/by-event/${eventId}`)
+          api.get(`/events/${eventId}`),
+          api.get(`/matches/by-event/${eventId}`)
         ]);
         setEvent(eventRes.data);
         setMatches(matchesRes.data);

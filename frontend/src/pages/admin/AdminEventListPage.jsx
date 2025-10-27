@@ -10,7 +10,7 @@ const AdminEventListPage = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/events');
+      const res = await api.get('/events');
       setEvents(res.data);
     } catch (err) {
       console.error("Failed to fetch events", err);

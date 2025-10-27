@@ -2,24 +2,55 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const LiveScoreCard = ({ match }) => {
+  if (!match) return null;
+
   return (
-    <Link 
-      to={`/events/${match.event._id}`} // Or a direct match page
-      className="block bg-surface-light dark:bg-surface-dark shadow-md rounded-lg p-4 overflow-hidden relative border-l-4 border-red-600"
-    >
-      <span className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">LIVE</span>
-      
-      <h3 className="font-bold text-lg mb-2 truncate">{match.sport.name}</h3>
-      
-      <div className="text-center my-4">
-        <span className="text-4xl font-bold">{match.score?.teamA_score || 0} - {match.score?.teamB_score || 0}</span>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-l-4 border-green-500">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">
+            LIVE
+          </span>
+          <h3 className="font-bold text-lg mt-1 text-gray-900 dark:text-white">
+            {match.sport?.name || 'Match'}
+          </h3>
+        </div>
+        <Link 
+          to={`/matches/${match._id}`}
+          className="text-blue-600 hover:text-blue-800 text-sm"
+        >
+          Watch →
+        </Link>
       </div>
-      
-      <div className="flex justify-between text-sm font-medium">
-        <span className="truncate w-2/5 text-left">{match.teamA.name}</span>
-        <span className="truncate w-2/5 text-right">{match.teamB.name}</span>
+
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="font-medium text-gray-700 dark:text-gray-300">
+            {match.teamA?.name || 'Team A'}
+          </span>
+          <span className="font-bold text-lg">
+            {match.score ? match.score.split('-')[0] : '0'}
+          </span>
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <span className="font-medium text-gray-700 dark:text-gray-300">
+            {match.teamB?.name || 'Team B'}
+          </span>
+          <span className="font-bold text-lg">
+            {match.score ? match.score.split('-')[1] : '0'}
+          </span>
+        </div>
       </div>
-    </Link>
+
+      {match.event && (
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {match.event.name}
+          </p>
+        </div>
+      )}
+    </div>
   );
 };
 

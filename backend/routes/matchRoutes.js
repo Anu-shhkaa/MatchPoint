@@ -1,70 +1,202 @@
 import express from 'express';
-import {Match} from '../models/Match.js';
-import { protect } from '../middleware/authMiddleware.js'; // Import the protection
+import { protect } from '../middleware/authMiddleware.js';
+import {
+  createMatch,
+  getMatchesForEvent,
+  startMatchLive,
+  updateMatchResult
+} from '../controllers/matchController.js';
+import { Match } from '../models/Match.js';
 
 const router = express.Router();
-
-// --- PUBLIC ROUTE ---
-// GET /api/matches
-// Get all matches (for viewers)
+// GET /api/matches - Get all matches with filters
 router.get('/', async (req, res) => {
   try {
-    const matches = await Match.find({}).populate('event', 'name'); // Get event name
+    const { status, limit, sort } = req.query;
+    
+    console.log('📡 Fetching matches with filters:', { status, limit, sort });
+
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    let query = Match.find(filter)
+      .populate('event', 'name')  // Populate event name
+      .populate('teamA', 'name')  // Populate teamA name
+      .populate('teamB', 'name')  // Populate teamB name
+      .populate('sport', 'name genderCategory'); // Populate sport with more fields
+
+    if (sort === 'desc') {
+      query = query.sort({ createdAt: -1 });
+    } else {
+      query = query.sort({ createdAt: 1 });
+    }
+
+    if (limit) {
+      query = query.limit(parseInt(limit));
+    }
+
+    const matches = await query;
+    console.log(`✅ Found ${matches.length} matches`);
+    
+    // Debug: Log first match to see populated data
+    if (matches.length > 0) {
+      console.log('🔍 Sample match after population:', {
+        id: matches[0]._id,
+        teamA: matches[0].teamA,
+        teamB: matches[0].teamB,
+        sport: matches[0].sport
+      });
+    }
+    
     res.json(matches);
+
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching matches' });
+    console.error('❌ Error fetching matches:', error);
+    res.status(500).json({ 
+      message: 'Error fetching matches', 
+      error: error.message 
+    });
   }
 });
 
-// --- ADMIN-ONLY ROUTES ---
+// --- PUBLIC ROUTES ---
+// GET /api/matches - Get all matches with filters
+// ✅ ADD THIS ROUTE IMMEDIATELY - PUT IT AT THE TOP
+router.get('/:id', async (req, res) => {
+  try {
+    console.log('📡 Fetching match by ID:', req.params.id);
+    const match = await Match.findById(req.params.id)
+      .populate('event')
+      .populate('teamA')
+      .populate('teamB')
+      .populate('sport');
 
-// POST /api/matches
-// Create a new match (protected)
-router.post('/', protect, async (req, res) => {
-  // Logic to create a new match...
-  // const { eventId, teamA, teamB, matchTime } = req.body;
-  // const newMatch = new Match({...});
-  // await newMatch.save();
-  // res.status(201).json(newMatch);
-  res.send('Admin route to create a match');
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    console.log(`✅ Found match: ${match._id}`);
+    res.json(match);
+
+  } catch (error) {
+    console.error('❌ Error fetching match:', error);
+    res.status(500).json({ 
+      message: 'Error fetching match', 
+      error: error.message 
+    });
+  }
+});
+router.get('/', async (req, res) => {
+  try {
+    const { status, limit, sort } = req.query;
+    
+    console.log('📡 Fetching matches with filters:', { status, limit, sort });
+
+    let filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    let query = Match.find(filter)
+      .populate('event', 'name')
+      .populate('teamA', 'name')
+      .populate('teamB', 'name')
+      .populate('sport', 'name');
+
+    if (sort === 'desc') {
+      query = query.sort({ createdAt: -1 });
+    } else {
+      query = query.sort({ createdAt: 1 });
+    }
+
+    if (limit) {
+      query = query.limit(parseInt(limit));
+    }
+
+    const matches = await query;
+    console.log(`✅ Found ${matches.length} matches`);
+    res.json(matches);
+
+  } catch (error) {
+    console.error('❌ Error fetching matches:', error);
+    res.status(500).json({ 
+      message: 'Error fetching matches', 
+      error: error.message 
+    });
+  }
 });
 
-// PUT /api/matches/:id/score
-// Update a match's score (protected)
+// ✅ ADD THIS ROUTE: GET /api/matches/:id - Get single match by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id)
+      .populate('event')
+      .populate('teamA')
+      .populate('teamB')
+      .populate('sport');
+
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    console.log(`✅ Found match: ${match._id}`);
+    res.json(match);
+
+  } catch (error) {
+    console.error('❌ Error fetching match:', error);
+    res.status(500).json({ 
+      message: 'Error fetching match', 
+      error: error.message 
+    });
+  }
+});
+
+// GET /api/matches/by-event/:eventId - Get matches by event
+router.get('/by-event/:eventId', getMatchesForEvent);
+
+// --- ADMIN-ONLY ROUTES ---
+// POST /api/matches - Create a new match
+router.post('/', protect, createMatch);
+
+// PUT /api/matches/:id/live - Start match live (WebSocket)
+router.put('/:id/live', protect, startMatchLive);
+
+// PUT /api/matches/:id/result - Update match result (WebSocket)
+router.put('/:id/result', protect, updateMatchResult);
+
+// PUT /api/matches/:id/score - Update match score (WebSocket)
 router.put('/:id/score', protect, async (req, res) => {
   try {
     const matchId = req.params.id;
-    const newScore = req.body.score; // The new score object from the admin panel
+    const newScore = req.body.score;
 
     const updatedMatch = await Match.findByIdAndUpdate(
       matchId,
       { 
         score: newScore,
-        status: 'live' // Automatically set to live on score update
+        status: 'live'
       },
-      { new: true } // Return the updated document
-    ).populate('event', 'name');
+      { new: true }
+    )
+    .populate('event', 'name')
+    .populate('teamA', 'name')
+    .populate('teamB', 'name');
 
     if (!updatedMatch) {
       return res.status(404).json({ message: 'Match not found' });
     }
 
-    // --- THIS IS THE REAL-TIME PART ---
-    // Get the 'io' instance we attached in server.js
     const io = req.app.get('io');
-    // Emit an event to ALL connected clients
     io.emit('scoreUpdated', updatedMatch);
     
     res.json(updatedMatch);
 
   } catch (error) {
     console.error('Score update error:', error);
-    res.status(500).json({ message: 'Error updating score' });
+    res.status(500).json({ message: 'Error updating score', error: error.message });
   }
 });
-
-// You would add more routes here, e.g., to set status to 'completed'
-// PUT /api/matches/:id/complete
-// ...
 
 export default router;

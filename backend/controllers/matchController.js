@@ -9,9 +9,17 @@ export const createMatch = async (req, res) => {
   try {
     const match = new Match(req.body);
     await match.save();
+    
+    // Populate the response
+    await match.populate('event teamA teamB sport');
+    
     res.status(201).json(match);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating match' });
+    console.error('Error creating match:', error);
+    res.status(400).json({ 
+      message: 'Error creating match', 
+      error: error.message 
+    });
   }
 };
 
@@ -21,10 +29,16 @@ export const getMatchesForEvent = async (req, res) => {
     const matches = await Match.find({ event: req.params.eventId })
       .populate('sport')
       .populate('teamA')
-      .populate('teamB');
+      .populate('teamB')
+      .populate('event');
+    
     res.json(matches);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Error fetching matches for event:', error);
+    res.status(500).json({ 
+      message: 'Server Error', 
+      error: error.message 
+    });
   }
 };
 
@@ -37,25 +51,27 @@ export const startMatchLive = async (req, res) => {
     match.status = 'live';
     const updatedMatch = await match.save();
 
-    // --- REAL-TIME: Tell everyone this match is now live ---
+    // WebSocket broadcast
     const io = req.app.get('io');
     io.emit('matchStarted', updatedMatch);
     
     res.json(updatedMatch);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error('Error starting match live:', error);
+    res.status(500).json({ 
+      message: 'Server Error', 
+      error: error.message 
+    });
   }
 };
 
-// --- THIS IS THE MOST IMPORTANT CONTROLLER ---
-// Admin Submits Final Result
+// --- Update Match Result ---
 export const updateMatchResult = async (req, res) => {
   const { winnerTeam, loserTeam, winnerAchievement, loserAchievement, score } = req.body;
   const matchId = req.params.id;
-  const io = req.app.get('io');
 
   try {
-    // 1. Find the match, its event, and the sport
+    // 1. Find the match
     const match = await Match.findById(matchId);
     if (!match) return res.status(404).json({ message: 'Match not found' });
     
@@ -63,47 +79,42 @@ export const updateMatchResult = async (req, res) => {
     const sport = await Sport.findById(match.sport);
     const pointingSystem = await PointingSystem.findById(event.pointingSystem);
 
-    // 2. Get the points from the template
-    const winnerPoints = pointingSystem.getPointsForLevel(winnerAchievement);
-    const loserPoints = pointingSystem.getPointsForLevel(loserAchievement);
-    
-    // 3. Update the PointsTable for both teams
+    // 2. Get points from pointing system (adjust based on your structure)
+    const winnerPoints = pointingSystem?.points?.win || 2;
+    const loserPoints = pointingSystem?.points?.loss || 0;
+
+    // 3. Update PointsTable for both teams
     const updateWinnerPoints = PointsTable.updateOne(
       { event: event._id, team: winnerTeam },
       {
-        $inc: { basePoints: winnerPoints, totalPoints: winnerPoints },
+        $inc: { 
+          points: winnerPoints,
+          matchesPlayed: 1,
+          wins: 1
+        },
       }
     );
+    
     const updateLoserPoints = PointsTable.updateOne(
       { event: event._id, team: loserTeam },
       {
-        $inc: { basePoints: loserPoints, totalPoints: loserPoints },
+        $inc: { 
+          points: loserPoints,
+          matchesPlayed: 1,
+          losses: 1
+        },
       }
     );
+    
     await Promise.all([updateWinnerPoints, updateLoserPoints]);
 
-    // 4. (FOR SPHURTI) Update Max Achievement for Joker Logic
-    if (event.hasJokerFeature && sport.genderCategory !== 'Mixed') {
-      const winnerGender = sport.genderCategory; // "Boys" or "Girls"
-      const loserGender = sport.genderCategory;
-      
-      const updateWinnerMax = PointsTable.updateOne(
-        { event: event._id, team: winnerTeam },
-        { $max: { [`maxAchievementByGender.${winnerGender}`]: winnerAchievement } }
-      );
-      const updateLoserMax = PointsTable.updateOne(
-        { event: event._id, team: loserTeam },
-        { $max: { [`maxAchievementByGender.${loserGender}`]: loserAchievement } }
-      );
-      await Promise.all([updateWinnerMax, updateLoserMax]);
-    }
-
-    // 5. Update the Match document itself
+    // 4. Update the Match
     match.status = 'completed';
     match.result = { winnerTeam, loserTeam, winnerAchievement, loserAchievement, score };
     const updatedMatch = await match.save();
 
-    // 6. --- REAL-TIME: Tell everyone the match is over AND the points table changed ---
+    // 5. WebSocket broadcast
+    const io = req.app.get('io');
     io.emit('matchCompleted', updatedMatch);
     io.emit('pointsTableUpdated', { eventId: event._id });
     
@@ -111,6 +122,9 @@ export const updateMatchResult = async (req, res) => {
 
   } catch (error) {
     console.error('Error updating match result:', error);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ 
+      message: 'Server Error', 
+      error: error.message 
+    });
   }
 };
